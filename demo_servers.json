@@ -1,0 +1,17 @@
+{
+  "git-helper": {
+    "command": "git",
+    "args": ["status"],
+    "env": {}
+  },
+  "node-dev": {
+    "command": "node",
+    "args": ["--version"],
+    "env": {"NODE_ENV": "development"}
+  },
+  "python-script": {
+    "command": "python3",
+    "args": ["--version"],
+    "env": {}
+  }
+}

@@ -1,0 +1,1 @@
+{"test-server": {"command": "echo", "args": ["hello"], "env": {}}}

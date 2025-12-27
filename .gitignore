@@ -1,0 +1,54 @@
+# Swift
+.build/
+*.xcodeproj
+*.playground
+.swiftpm/
+Package.resolved
+
+# Xcode
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xcworkspace
+xcuserdata/
+*.resolved
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+*.swp
+*~
+
+# IDE
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Database & Backups
+*.db
+*.db-journal
+.config/McpSwitcher/
+
+# Exports
+mcp-servers.json
+mcp-servers-*.json
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+Pods/
+Carthage/
+
+# Testing
+.coverage/
+coverage.txt
+

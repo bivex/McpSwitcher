@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    "git-server": {
+      "command": "git",
+      "args": ["--version"],
+      "env": {}
+    },
+    "node-server": {
+      "command": "node",
+      "args": ["--version"],
+      "env": {
+        "NODE_ENV": "development"
+      }
+    },
+    "http-server": {
+      "url": "http://localhost:3000",
+      "headers": {
+        "Authorization": "Bearer token123"
+      }
+    }
+  }
+}
