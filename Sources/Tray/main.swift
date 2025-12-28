@@ -7,7 +7,7 @@
  * https://github.com/bivex
  *
  * Created: 2025-12-27T20:28:28
- * Last Updated: 2025-12-27T20:55:55
+ * Last Updated: 2025-12-28T14:37:52
  *
  * Licensed under the MIT License.
  * Commercial licensing available upon request.
@@ -109,10 +109,16 @@ struct SkillRow: SwiftUI.View {
     let onCopy: (SkillInfo) -> Void
     let onOpenGitHub: (SkillInfo) -> Void
     let onCopyRawGitHub: (SkillInfo) -> Void
+    let onToggleFavorite: ((SkillInfo) -> Void)?
     
     private var isParsedAndCached: Bool {
         let cacheKey = "parsed_skill_\(skill.id)"
         return UserDefaults.standard.data(forKey: cacheKey) != nil
+    }
+    
+    private var isFavorite: Bool {
+        let favorites = UserDefaults.standard.stringArray(forKey: "favorite_skills") ?? []
+        return favorites.contains(skill.id)
     }
 
     var body: some SwiftUI.View {
@@ -133,6 +139,17 @@ struct SkillRow: SwiftUI.View {
                 }
 
                 Spacer()
+                
+                // Favorite button (star)
+                if let toggleFavorite = onToggleFavorite {
+                    Button(action: { toggleFavorite(skill) }) {
+                        Image(systemName: isFavorite ? "star.fill" : "star")
+                            .font(.system(size: 12))
+                            .foregroundColor(isFavorite ? .yellow : .gray)
+                    }
+                    .buttonStyle(.plain)
+                    .help(isFavorite ? "Remove from favorites" : "Add to favorites")
+                }
 
                 // GitHub buttons (only if GitHub URL exists)
                 if skill.githubUrl != nil {
@@ -368,8 +385,14 @@ struct SkillsView: SwiftUI.View {
                 ScrollView {
                     LazyVStack(spacing: 0) {
                         ForEach(viewModel.skills) { skill in
-                            SkillRow(skill: skill, onCopy: viewModel.copySkillToClipboard, onOpenGitHub: viewModel.openGitHubLink, onCopyRawGitHub: viewModel.copyRawGitHubContent)
-                                .background(Color.white.opacity(0.02))
+                            SkillRow(
+                                skill: skill,
+                                onCopy: viewModel.copySkillToClipboard,
+                                onOpenGitHub: viewModel.openGitHubLink,
+                                onCopyRawGitHub: viewModel.copyRawGitHubContent,
+                                onToggleFavorite: viewModel.toggleFavorite
+                            )
+                            .background(Color.white.opacity(0.02))
 
                             Divider()
                                 .background(Color.gray.opacity(0.3))
@@ -961,6 +984,92 @@ class SkillsViewModel: ObservableObject {
         print("🗑️ Cleared all parsed skills cache (\(parsedSkillIds.count) items)")
     }
 
+    func toggleFavorite(_ skill: SkillInfo) {
+        var favorites = UserDefaults.standard.stringArray(forKey: "favorite_skills") ?? []
+        
+        if favorites.contains(skill.id) {
+            // Remove from favorites
+            favorites.removeAll { $0 == skill.id }
+            print("⭐ Removed from favorites: \(skill.title)")
+            
+            // Also remove full skill data
+            UserDefaults.standard.removeObject(forKey: "favorite_skill_data_\(skill.id)")
+        } else {
+            // Add to favorites
+            favorites.append(skill.id)
+            print("⭐ Added to favorites: \(skill.title)")
+            
+            // Save full skill data for later retrieval
+            let skillData: [String: Any] = [
+                "id": skill.id,
+                "title": skill.title,
+                "description": skill.description ?? "",
+                "category": skill.category ?? "",
+                "difficulty": skill.difficulty ?? "",
+                "stars": skill.stars ?? 0.0,
+                "starCount": skill.starCount ?? 0,
+                "tags": skill.tags,
+                "author": skill.author ?? "",
+                "url": skill.url ?? "",
+                "githubUrl": skill.githubUrl ?? "",
+                "addedAt": Date().timeIntervalSince1970
+            ]
+            
+            if let data = try? JSONSerialization.data(withJSONObject: skillData) {
+                UserDefaults.standard.set(data, forKey: "favorite_skill_data_\(skill.id)")
+            }
+        }
+        
+        UserDefaults.standard.set(favorites, forKey: "favorite_skills")
+        
+        // Trigger UI update
+        objectWillChange.send()
+    }
+    
+    func getFavoriteSkills() -> [SkillInfo] {
+        let favorites = UserDefaults.standard.stringArray(forKey: "favorite_skills") ?? []
+        var skills: [SkillInfo] = []
+        
+        for skillId in favorites {
+            guard let data = UserDefaults.standard.data(forKey: "favorite_skill_data_\(skillId)"),
+                  let skillData = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                continue
+            }
+            
+            let skill = SkillInfo(
+                id: skillData["id"] as? String ?? skillId,
+                title: skillData["title"] as? String ?? "Unknown",
+                description: skillData["description"] as? String,
+                category: skillData["category"] as? String,
+                difficulty: skillData["difficulty"] as? String,
+                stars: skillData["stars"] as? Double,
+                starCount: skillData["starCount"] as? Int,
+                tags: skillData["tags"] as? [String] ?? [],
+                author: skillData["author"] as? String,
+                url: skillData["url"] as? String,
+                githubUrl: skillData["githubUrl"] as? String
+            )
+            
+            skills.append(skill)
+        }
+        
+        return skills
+    }
+    
+    func getFavoritesCount() -> Int {
+        return UserDefaults.standard.stringArray(forKey: "favorite_skills")?.count ?? 0
+    }
+    
+    func clearFavorites() {
+        let favorites = UserDefaults.standard.stringArray(forKey: "favorite_skills") ?? []
+        for skillId in favorites {
+            UserDefaults.standard.removeObject(forKey: "favorite_skill_data_\(skillId)")
+        }
+        UserDefaults.standard.removeObject(forKey: "favorite_skills")
+        print("🗑️ Cleared all favorites (\(favorites.count) items)")
+        objectWillChange.send()
+    }
+
     func testClipboard() {
         guard let clipboardService = clipboardService else {
             print("❌ Clipboard service not initialized in test")
@@ -980,6 +1089,107 @@ class SkillsViewModel: ObservableObject {
         } else {
             print("❌ Tray app clipboard test failed!")
         }
+    }
+}
+
+struct FavoritesView: SwiftUI.View {
+    @StateObject private var viewModel = SkillsViewModel()
+    @State private var favoriteSkills: [SkillInfo] = []
+    
+    var body: some SwiftUI.View {
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Text("Favorite Skills")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.white)
+                
+                Spacer()
+                
+                // Favorites count badge
+                if !favoriteSkills.isEmpty {
+                    Text("\(favoriteSkills.count)")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 2)
+                        .background(Color.yellow.opacity(0.8))
+                        .clipShape(Capsule())
+                }
+            }
+            .padding(.vertical, 16)
+            .padding(.horizontal, 16)
+            
+            // Content
+            if favoriteSkills.isEmpty {
+                VStack(spacing: 16) {
+                    Image(systemName: "star.slash")
+                        .font(.system(size: 48))
+                        .foregroundColor(.gray.opacity(0.5))
+                    
+                    Text("No Favorite Skills Yet")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.gray)
+                    
+                    Text("Add skills to favorites by clicking the star ⭐ button")
+                        .font(.system(size: 11))
+                        .foregroundColor(.gray.opacity(0.7))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 40)
+                }
+                .frame(maxHeight: .infinity)
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(favoriteSkills) { skill in
+                            SkillRow(
+                                skill: skill,
+                                onCopy: viewModel.copySkillToClipboard,
+                                onOpenGitHub: viewModel.openGitHubLink,
+                                onCopyRawGitHub: viewModel.copyRawGitHubContent,
+                                onToggleFavorite: { skill in
+                                    viewModel.toggleFavorite(skill)
+                                    loadFavorites()
+                                }
+                            )
+                            .background(Color.white.opacity(0.02))
+                            
+                            Divider()
+                                .background(Color.gray.opacity(0.3))
+                        }
+                    }
+                }
+                .frame(maxHeight: .infinity)
+                
+                // Footer
+                HStack {
+                    Text("\(favoriteSkills.count) favorite skill\(favoriteSkills.count == 1 ? "" : "s")")
+                        .font(.system(size: 10))
+                        .foregroundColor(.gray)
+                    
+                    Spacer()
+                    
+                    Button("Clear All") {
+                        viewModel.clearFavorites()
+                        loadFavorites()
+                    }
+                    .font(.system(size: 11))
+                    .buttonStyle(.bordered)
+                    .foregroundColor(.red)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+            }
+        }
+        .frame(minWidth: 450, maxWidth: 600)
+        .background(Color(red: 0.15, green: 0.15, blue: 0.15))
+        .onAppear {
+            loadFavorites()
+        }
+    }
+    
+    private func loadFavorites() {
+        favoriteSkills = viewModel.getFavoriteSkills()
     }
 }
 
@@ -1004,6 +1214,12 @@ struct MainPopoverView: SwiftUI.View {
                     Label("Skills", systemImage: "book")
                 }
                 .tag(1)
+            
+            FavoritesView()
+                .tabItem {
+                    Label("Favorites", systemImage: "star.fill")
+                }
+                .tag(2)
         }
         .frame(minWidth: 500, minHeight: 600)
         .background(Color(red: 0.15, green: 0.15, blue: 0.15))
