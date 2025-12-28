@@ -7,7 +7,7 @@
  * https://github.com/bivex
  *
  * Created: 2025-12-27T20:09:03
- * Last Updated: 2025-12-27T20:09:30
+ * Last Updated: 2025-12-28T14:10:50
  *
  * Licensed under the MIT License.
  * Commercial licensing available upon request.
@@ -18,6 +18,7 @@ import ArgumentParser
 import Domain
 import Infrastructure
 import Application
+import Domain
 
 @main
 struct MCPSwitcher: AsyncParsableCommand {
@@ -33,7 +34,11 @@ struct MCPSwitcher: AsyncParsableCommand {
             Remove.self,
             Export.self,
             Status.self,
-            Import.self
+            Import.self,
+            SearchSkills.self,
+            SearchSkillsAI.self,
+            CopySkill.self,
+            TestClipboard.self
         ]
     )
 
@@ -430,6 +435,291 @@ struct Import: AsyncParsableCommand {
             for error in result.errors {
                 print("  - \(error)")
             }
+        }
+    }
+}
+
+// MARK: - Search Skills Command
+struct SearchSkills: AsyncParsableCommand {
+    static let configuration = CommandConfiguration(
+        abstract: "Search skills using keywords from SkillsMP"
+    )
+
+    @Argument(help: "Search query (keywords)")
+    var query: String
+
+    @Option(help: "Page number (default: 1)")
+    var page: Int = 1
+
+    @Option(help: "Results per page (default: 20, max: 100)")
+    var limit: Int = 20
+
+    @Option(help: "Sort by: stars (highest rated) or recent (newest)")
+    var sortBy: String?
+
+    @Option(help: "SkillsMP API key")
+    var apiKey: String?
+
+    @Flag(help: "Show pagination info only")
+    var pagination: Bool = false
+
+    func run() async throws {
+        let apiKey = apiKey ?? ProcessInfo.processInfo.environment["SKILLSMP_API_KEY"]
+        guard let apiKey = apiKey, !apiKey.isEmpty else {
+            print("❌ SkillsMP API key is required.")
+            print("   Set it with --api-key or SKILLSMP_API_KEY environment variable")
+            throw ExitCode.failure
+        }
+
+        let apiService = SkillsMPAPIService(apiKey: apiKey)
+        let useCase = SearchSkillsUseCase(skillsAPIService: apiService)
+
+        let input = SkillSearchInput(
+            query: query,
+            page: page,
+            limit: limit,
+            sortBy: sortBy
+        )
+
+        do {
+            let result = try await useCase.execute(input: input)
+            if pagination {
+                displayPaginationInfo(result, query: query)
+            } else {
+                displaySearchResults(result, query: query)
+            }
+        } catch let error as SkillsAPIError {
+            print("❌ Search failed: \(error.localizedDescription)")
+            throw ExitCode.failure
+        } catch {
+            print("❌ Unexpected error: \(error.localizedDescription)")
+            throw ExitCode.failure
+        }
+    }
+
+    private func displaySearchResults(_ result: SkillSearchResult, query: String) {
+        print("🔍 Skills search results for: '\(query)'")
+        print("   Page \(result.page), \(result.skills.count) of \(result.totalCount) results")
+
+        if result.skills.isEmpty {
+            print("   No skills found")
+            return
+        }
+
+        print("\n📚 Skills:")
+        for (index, skill) in result.skills.enumerated() {
+            let number = index + 1 + (result.page - 1) * result.limit
+            print("\n\(number). 🎯 \(skill.title)")
+
+            if let category = skill.category {
+                print("   🏷️ Category: \(category)")
+            }
+
+            if let difficulty = skill.difficulty {
+                print("   📊 Difficulty: \(difficulty)")
+            }
+
+            if let stars = skill.stars {
+                let starText = String(format: "%.1f", stars)
+                var rating = "⭐ \(starText)"
+                if let starCount = skill.starCount {
+                    rating += " (\(starCount) reviews)"
+                }
+                print("   \(rating)")
+            }
+
+            if !skill.tags.isEmpty {
+                print("   🏷️ Tags: \(skill.tags.joined(separator: ", "))")
+            }
+
+            if let duration = skill.duration {
+                print("   ⏱️ Duration: \(duration) minutes")
+            }
+
+            print("   🔗 ID: \(skill.id)")
+        }
+
+        if result.hasMore {
+            print("\n💡 Use --page \(result.page + 1) to see more results")
+        }
+
+        print("\n💡 Use 'mcp-switcher copy-skill <id>' to copy a skill to clipboard")
+    }
+
+    private func displayPaginationInfo(_ result: SkillSearchResult, query: String) {
+        print("🔍 Skills search pagination info for: '\(query)'")
+        print("   Total results: \(result.totalCount)")
+        print("   Results per page: \(result.limit)")
+        print("   Current page: \(result.page)")
+        print("   Total pages: \(Int(ceil(Double(result.totalCount) / Double(result.limit))))")
+        print("   Has more pages: \(result.hasMore)")
+
+        let startResult = (result.page - 1) * result.limit + 1
+        let endResult = min(result.page * result.limit, result.totalCount)
+        print("   Showing results: \(startResult)-\(endResult) of \(result.totalCount)")
+
+        if result.hasMore {
+            print("\n💡 Use --page \(result.page + 1) to see the next page")
+        }
+    }
+}
+
+// MARK: - Search Skills AI Command
+struct SearchSkillsAI: AsyncParsableCommand {
+    static let configuration = CommandConfiguration(
+        abstract: "Search skills using AI semantic search from SkillsMP"
+    )
+
+    @Argument(help: "Natural language search query")
+    var query: String
+
+    @Option(help: "SkillsMP API key")
+    var apiKey: String?
+
+    func run() async throws {
+        let apiKey = apiKey ?? ProcessInfo.processInfo.environment["SKILLSMP_API_KEY"]
+        guard let apiKey = apiKey, !apiKey.isEmpty else {
+            print("❌ SkillsMP API key is required.")
+            print("   Set it with --api-key or SKILLSMP_API_KEY environment variable")
+            throw ExitCode.failure
+        }
+
+        let apiService = SkillsMPAPIService(apiKey: apiKey)
+        let useCase = SearchSkillsAIUseCase(skillsAPIService: apiService)
+
+        do {
+            let result = try await useCase.execute(query: query)
+            displaySearchResults(result, query: query)
+        } catch let error as SkillsAPIError {
+            print("❌ AI search failed: \(error.localizedDescription)")
+            throw ExitCode.failure
+        } catch {
+            print("❌ Unexpected error: \(error.localizedDescription)")
+            throw ExitCode.failure
+        }
+    }
+
+    private func displaySearchResults(_ result: SkillSearchResult, query: String) {
+        print("🤖 AI Skills search results for: '\(query)'")
+        print("   Found \(result.skills.count) relevant skills")
+
+        if result.skills.isEmpty {
+            print("   No skills found")
+            return
+        }
+
+        print("\n📚 Skills:")
+        for (index, skill) in result.skills.enumerated() {
+            print("\n\(index + 1). 🎯 \(skill.title)")
+
+            if let category = skill.category {
+                print("   🏷️ Category: \(category)")
+            }
+
+            if let difficulty = skill.difficulty {
+                print("   📊 Difficulty: \(difficulty)")
+            }
+
+            if let stars = skill.stars {
+                let starText = String(format: "%.1f", stars)
+                var rating = "⭐ \(starText)"
+                if let starCount = skill.starCount {
+                    rating += " (\(starCount) reviews)"
+                }
+                print("   \(rating)")
+            }
+
+            if !skill.tags.isEmpty {
+                print("   🏷️ Tags: \(skill.tags.joined(separator: ", "))")
+            }
+
+            if let duration = skill.duration {
+                print("   ⏱️ Duration: \(duration) minutes")
+            }
+
+            print("   🔗 ID: \(skill.id)")
+        }
+
+        print("\n💡 Use 'mcp-switcher copy-skill <id>' to copy a skill to clipboard")
+    }
+}
+
+// MARK: - Copy Skill Command
+struct CopySkill: AsyncParsableCommand {
+    static let configuration = CommandConfiguration(
+        abstract: "Copy skill information to clipboard"
+    )
+
+    @Argument(help: "Skill ID to copy")
+    var skillId: String
+
+    @Option(help: "SkillsMP API key")
+    var apiKey: String?
+
+    func run() async throws {
+        let apiKey = apiKey ?? ProcessInfo.processInfo.environment["SKILLSMP_API_KEY"]
+        guard let apiKey = apiKey, !apiKey.isEmpty else {
+            print("❌ SkillsMP API key is required.")
+            print("   Set it with --api-key or SKILLSMP_API_KEY environment variable")
+            throw ExitCode.failure
+        }
+
+        let apiService = SkillsMPAPIService(apiKey: apiKey)
+        let searchUseCase = SearchSkillsUseCase(skillsAPIService: apiService)
+        let clipboardService = SystemClipboardService()
+        let copyUseCase = CopySkillToClipboardUseCase(clipboardService: clipboardService)
+
+        // First search for the skill by ID (we'll use a broad search and filter)
+        do {
+            let result = try await searchUseCase.execute(input: SkillSearchInput(query: skillId, limit: 50))
+
+            // Find the skill with the exact ID
+            guard let skill = result.skills.first(where: { $0.id == skillId }) else {
+                print("❌ Skill with ID '\(skillId)' not found")
+                throw ExitCode.failure
+            }
+
+            let success = copyUseCase.execute(skill: skill)
+            if success {
+                print("✓ Copied skill '\(skill.title)' to clipboard")
+                print("💡 Skill information is now in your clipboard")
+            } else {
+                print("❌ Failed to copy to clipboard")
+                print("📋 Skill information:")
+                print(skill.formatForClipboard())
+                throw ExitCode.failure
+            }
+
+        } catch let error as SkillsAPIError {
+            print("❌ Failed to find skill: \(error.localizedDescription)")
+            throw ExitCode.failure
+        } catch {
+            print("❌ Unexpected error: \(error.localizedDescription)")
+            throw ExitCode.failure
+        }
+    }
+}
+
+// MARK: - Test Clipboard Command
+struct TestClipboard: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        abstract: "Test clipboard functionality"
+    )
+
+    @Argument(help: "Text to copy to clipboard")
+    var text: String
+
+    func run() throws {
+        print("🧪 Testing clipboard with text: '\(text)'")
+
+        let clipboardService = SystemClipboardService()
+        let success = clipboardService.copyToClipboard(text)
+
+        if success {
+            print("✅ Clipboard copy successful!")
+            print("📋 Text copied to clipboard. You can now paste it anywhere.")
+        } else {
+            print("❌ Clipboard copy failed!")
         }
     }
 }

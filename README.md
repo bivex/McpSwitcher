@@ -11,12 +11,14 @@
 
 ### Purpose of This Document
 
-This guide explains how to install, configure, and use **MCP Switcher**—a CLI tool for managing MCP (Model Context Protocol) server configurations. You will learn how to:
+This guide explains how to install, configure, and use **MCP Switcher**—a CLI tool for managing MCP (Model Context Protocol) server configurations and accessing learning resources from SkillsMP. You will learn how to:
 
 - Install the application on your system
 - Create and manage MCP server entries
 - Enable or disable servers without manual JSON editing
 - Export clean configurations for use with Cursor, Claude, or other MCP-compatible tools
+- Search for learning skills using keyword or AI-powered semantic search
+- Copy skill information to your clipboard for easy reference
 - Troubleshoot common issues
 
 ### Scope
@@ -25,6 +27,8 @@ This document covers:
 - **Installation** on macOS 13.0 and later
 - **Core operations** (listing, toggling, creating, removing servers)
 - **Configuration export** and integration with Cursor/Claude
+- **Skill search** from SkillsMP platform (keyword and AI search)
+- **Clipboard integration** for copying skill information
 - **Troubleshooting** common problems
 - **Data backup and recovery**
 
@@ -45,7 +49,7 @@ This document does **not** cover:
 
 1. **Start with "Concept of Operations"** if this is your first time using MCP Switcher.
 2. **Go to "Installation and Setup"** if you need to install the application.
-3. **Use "Task-Based Procedures"** to find instructions for specific actions (enable a server, export configuration, etc.).
+3. **Use "Task-Based Procedures"** to find instructions for specific actions (enable a server, export configuration, search skills, etc.).
 4. **Check "Troubleshooting"** if you encounter problems.
 5. **Refer to the "Glossary"** for unfamiliar terms.
 
@@ -563,6 +567,307 @@ The file is created with the following structure:
 **Expected Result:**
 
 All servers from the JSON file are added to your MCP Switcher database. They are imported as disabled by default; enable them with the `enable` command (see Task 2).
+
+---
+
+### Task 12: Search Skills from SkillsMP (Keyword Search)
+
+**Purpose:** Find learning resources and skills using keyword search from the SkillsMP platform.
+
+**Preconditions:**
+- You have a SkillsMP API key
+- Internet connection is available
+
+**Steps:**
+
+1. Set your API key as an environment variable (recommended):
+   ```bash
+   export SKILLSMP_API_KEY="sk_live_your_api_key_here"
+   ```
+
+2. Run the keyword search command:
+   ```bash
+   mcp-switcher search-skills "SEO"
+   ```
+
+3. Navigate through pages:
+   ```bash
+   # View specific page
+   mcp-switcher search-skills "web development" --page 2 --limit 50
+
+   # Check pagination info without showing results
+   mcp-switcher search-skills "web development" --pagination
+   ```
+
+4. Advanced search options:
+   ```bash
+   # Search with sorting
+   mcp-switcher search-skills "machine learning" --sort-by stars
+   mcp-switcher search-skills "web development" --sort-by recent
+
+   # Combined with pagination
+   mcp-switcher search-skills "react" --sort-by stars --page 2 --limit 50
+
+   # Or specify API key directly
+   mcp-switcher search-skills "AI" --api-key "sk_live_your_key"
+   ```
+
+**Expected Result:**
+
+```
+🔍 Skills search results for: 'coder'
+   Page 1, 20 of 102 results
+
+📚 Skills:
+
+1. 🎯 pr-review-extraction
+   🏷️ Category: undefined
+   📊 Difficulty: undefined
+   ⭐ Rating: 0.0
+   🏷️ Tags: (none)
+   🔗 ID: endo-ava-ego-graph-claude-skills-pr-review-extraction-skill-md
+
+2. 🎯 coderabbit-request
+   🏷️ Category: undefined
+   📊 Difficulty: undefined
+   ⭐ Rating: 0.0
+   🏷️ Tags: (none)
+   🔗 ID: caiokf-dev-profile-claude-skills-coderabbit-request-skill-md
+
+💡 Use --page 2 to see more results
+💡 Use 'mcp-switcher copy-skill <id>' to copy a skill to clipboard
+```
+
+---
+
+### Task 13: Search Skills Using AI (Semantic Search)
+
+**Purpose:** Find learning resources using AI-powered semantic search that understands natural language queries.
+
+**Preconditions:**
+- You have a SkillsMP API key
+- Internet connection is available
+
+**Steps:**
+
+1. Set your API key:
+   ```bash
+   export SKILLSMP_API_KEY="sk_live_your_api_key_here"
+   ```
+
+2. Run the AI semantic search:
+   ```bash
+   mcp-switcher search-skills-ai "How to create a web scraper"
+   ```
+
+3. Or specify API key directly:
+   ```bash
+   mcp-switcher search-skills-ai "build a mobile app" --api-key "sk_live_your_key"
+   ```
+
+**Expected Result:**
+
+```
+🤖 AI Skills search results for: 'web scraping'
+   Found 10 relevant skills
+
+📚 Skills:
+
+1. 🎯 video-processor
+   🏷️ Category: undefined
+   📊 Difficulty: undefined
+   ⭐ Rating: 5.0
+   🔗 ID: basher83-lunar-claude-examples-skills-video-processor-skill-md
+
+2. 🎯 network-framework-ref
+   🏷️ Category: undefined
+   📊 Difficulty: undefined
+   ⭐ Rating: 77.0
+   🔗 ID: charleswiltgen-axiom-claude-plugin-plugins-axiom-skills-network-framework-ref-skill-md
+
+💡 Use 'mcp-switcher copy-skill <id>' to copy a skill to clipboard
+```
+
+---
+
+### Task 14: Copy Skill Information to Clipboard
+
+**Purpose:** Copy detailed skill information to your system clipboard for easy sharing or reference.
+
+**Preconditions:**
+- You have found a skill using search commands (Task 12 or 13)
+- You have the skill ID from the search results
+
+**Steps:**
+
+1. Copy a skill by its ID:
+   ```bash
+   mcp-switcher copy-skill "seo_fundamentals_001"
+   ```
+
+2. Or specify API key if not set as environment variable:
+   ```bash
+   mcp-switcher copy-skill "python_scraping_101" --api-key "sk_live_your_key"
+   ```
+
+**Expected Result:**
+
+```
+✓ Copied skill 'SEO Fundamentals' to clipboard
+💡 Skill information is now in your clipboard
+```
+
+**Clipboard Content Example:**
+
+```
+🎯 pr-review-extraction
+
+📝 Description:
+Extract and summarize review comments from GitHub PRs. Use when analyzing PR reviews, checking unresolved issues, or responding to CodeRabbit feedback.
+
+🏷️ Category: undefined
+📊 Difficulty: undefined
+⏱️ Duration: undefined
+⭐ Rating: 0.0
+🏷️ Tags:
+👤 Author: endo-ava
+📅 Updated: 2025-12-27
+🔗 URL: https://skillsmp.com/skills/endo-ava-ego-graph-claude-skills-pr-review-extraction-skill-md
+🔗 GitHub: https://github.com/endo-ava/ego-graph/tree/main/.claude/skills/pr-review-extraction
+```
+
+---
+
+### Task 15: Use Skills Search GUI (Tray App)
+
+**Purpose:** Access the SkillsMP skill search through a graphical interface in the system tray.
+
+**Preconditions:**
+- Tray app is running (see "Running the Tray App" section)
+- You have a SkillsMP API key
+- Internet connection is available
+
+**Steps:**
+
+1. Click the MCP Switcher icon in your system menu bar (macOS)
+
+2. In the popup window, click the "Skills" tab
+
+3. Enter your SkillsMP API key in the secure field
+
+4. Enter a search query in the text field
+
+5. Choose search type:
+   - **Keywords**: Paginated results with navigation and sorting controls
+   - **AI Search**: Shows all results at once (no pagination or sorting)
+
+6. For keyword search, select sorting option:
+   - **Default**: API default ordering
+   - **Stars**: Highest rated skills first
+   - **Recent**: Most recently added skills first
+
+7. Click the search button (magnifying glass for keywords, brain for AI)
+
+7. Navigate through results:
+   - Use Previous/Next buttons for pagination (keywords only)
+   - Click page numbers for direct navigation (if under 10 pages)
+   - Scroll through the skill list
+
+8. Copy skills to clipboard:
+   - Click the copy button (📄 icon) next to any skill
+   - Skill information is copied to your system clipboard
+
+9. Open GitHub links:
+   - Click the link button (🔗 icon) next to skills with GitHub repositories
+   - Opens the skill's GitHub page in your default web browser
+
+10. Copy raw GitHub content:
+    - Click the document button (📄 icon) next to skills with GitHub repositories
+    - Fetches the raw skill file from GitHub and parses it into a structured format
+    - Extracts sections, code blocks, and metadata for better readability
+    - Perfect for importing skills into Claude or other AI assistants
+
+**GUI Features:**
+
+- **Pagination Controls**: Navigate through large result sets
+- **Sorting Options**: Sort by stars, recent, or default (keyword search only)
+- **Search Type Toggle**: Switch between keyword and AI search
+- **GitHub Link Opening**: Direct links to skill repositories in browser
+- **Raw Content Copying**: Fetch and copy raw GitHub skill content to clipboard
+- **Real-time Results**: Live updates as you search
+- **Copy to Clipboard**: One-click copying of skill information
+- **Error Handling**: Clear error messages for API issues
+
+**Expected Result:**
+
+```
+[Tray App Window]
+┌─────────────────────────────────────┐
+│ Skills Search        [Servers] [Skills] │
+├─────────────────────────────────────┤
+│ API Key: [•••••••••••••••••••••••]    │
+│ Search: [web development_________] 🔍 🧠 │
+│ [Keywords] [AI Search]                 │
+│ Sort by: [Default] [Stars] [Recent]    │
+├─────────────────────────────────────┤
+│ 🎯 React Component Patterns            │
+│    ⭐ 4.8 (256 reviews) 🔗 📄 📄     │
+│ 🎯 Vue.js Best Practices               │
+│    ⭐ 4.6 (189 reviews) 🔗 📄 📄     │
+│ [◀ 1 of 5 ▶] [1] [2] [3] [4] [5]      │
+│ 250 skills total, showing page 1      │
+│                                        │
+│ 🔗 = Open GitHub  📄 = Copy Parsed Raw  📄 = Copy Info │
+└─────────────────────────────────────┘
+```
+
+### What Gets Copied to Clipboard:
+
+#### **Skill Info Copy (📄 Blue Button):**
+```
+🎯 React Component Patterns
+📝 Description: Learn modern React component patterns...
+🏷️ Category: Programming
+📊 Difficulty: intermediate
+⭐ Rating: 4.8 (256 reviews)
+🏷️ Tags: react, javascript, frontend
+👤 Author: ReactExpert
+🔗 SkillsMP URL: https://skillsmp.com/skills/react-patterns
+🔗 GitHub URL: https://github.com/ReactExpert/patterns
+📅 Updated: Dec 28, 2025
+```
+
+#### **Parsed Raw Copy (📄 Purple Button):**
+```
+🎯 React Component Patterns
+📄 Parsed GitHub Content
+══════════════════════════════════════════════════
+
+🏷️ Title: React Component Patterns
+🏷️ Description: Modern React patterns guide
+🏷️ Author: ReactExpert
+
+📋 Usage
+────────────
+This skill helps with React component development...
+
+📝 Examples
+───────────
+```javascript
+// Example component
+function MyComponent() {
+    return <div>Hello React!</div>;
+}
+```
+
+══════════════════════════════════════════════════
+🎉 SKILL CONTENT PARSED FROM GITHUB RAW FILE 🎉
+📋 ГОТОВ К ИМПОРТУ В CLAUDE DESKTOP ИЛИ ДРУГИЕ AI АССИСТЕНТЫ 📋
+🔗 ИСТОЧНИК: GitHub raw content / ПАРСЕНО ИЗ СЫРОГО ФАЙЛА
+══════════════════════════════════════════════════
+```
+
+**Note:** AI Search shows all results immediately and doesn't support pagination since it returns semantically relevant results in one batch.
 
 ---
 
