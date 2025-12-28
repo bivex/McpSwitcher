@@ -1,0 +1,154 @@
+╔══════════════════════════════════════════════════════════════════════════╗
+║                    McpSwitcher v1.0.0 - Package Info                     ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
+📦 PACKAGE DETAILS
+═══════════════════════════════════════════════════════════════════════════
+
+File Name:       McpSwitcher-1.0.0.dmg
+Size:            2.1 MB
+Format:          Apple Disk Image (DMG)
+Platform:        macOS 12.0+ (Monterey, Ventura, Sonoma)
+Architecture:    Universal (Intel + Apple Silicon)
+Release Date:    December 28, 2025
+
+═══════════════════════════════════════════════════════════════════════════
+📂 CONTENTS
+═══════════════════════════════════════════════════════════════════════════
+
+McpSwitcher.app/
+├── Contents/
+│   ├── Info.plist                    # App metadata
+│   ├── MacOS/
+│   │   └── McpSwitcher               # Main executable (tray app)
+│   └── Resources/
+│       └── bin/
+│           └── mcp-switcher          # CLI tool
+
+Applications                          # Symlink for easy install
+README.md                            # Project documentation
+INSTALL.md                           # Installation instructions
+
+═══════════════════════════════════════════════════════════════════════════
+✨ KEY FEATURES
+═══════════════════════════════════════════════════════════════════════════
+
+🟣 PURPLE BUTTON - Direct GitHub Skills Copy
+   • Fetches skill content from GitHub repositories
+   • Supports SKILL.md, skill.md, README.md
+   • Clean markdown without extra formatting
+   • Permanent local caching
+   • Offline access after first fetch
+   • Green checkmarks for cached skills
+
+📚 SKILLS SEARCH & MANAGEMENT
+   • Integrated SkillsMP platform
+   • Keyword and AI semantic search
+   • Filtering and sorting options
+   • Pagination support
+   • Rich metadata (tags, stars, authors)
+   • Cache management
+
+🖥️ SERVER MANAGEMENT
+   • Toggle MCP servers on/off
+   • Auto-sync with Cursor's mcp.json
+   • Real-time status updates
+   • Visual indicators
+   • Server count in menu bar
+
+🎨 MODERN INTERFACE
+   • Native SwiftUI design
+   • Dark mode support
+   • Tab-based navigation
+   • Smooth animations
+   • Menu bar integration
+
+═══════════════════════════════════════════════════════════════════════════
+🚀 INSTALLATION
+═══════════════════════════════════════════════════════════════════════════
+
+1. Double-click McpSwitcher-1.0.0.dmg
+2. Drag McpSwitcher.app to Applications folder
+3. Launch McpSwitcher from Applications
+4. Orange icon 🟠 appears in menu bar
+5. Click icon to start using
+
+First Launch:
+   • System Settings → Privacy & Security
+   • Click "Open Anyway" if security warning appears
+   • Grant necessary permissions
+
+═══════════════════════════════════════════════════════════════════════════
+💻 USAGE
+═══════════════════════════════════════════════════════════════════════════
+
+TRAY APP:
+   • Click orange icon in menu bar
+   • Tab 1: Server Management (toggle servers)
+   • Tab 2: Skills Search (search and copy skills)
+   • Right-click icon for quick menu
+   • Quit from menu
+
+PURPLE BUTTON WORKFLOW:
+   1. Open Skills tab
+   2. Search for a skill
+   3. Click purple button 🟣 on any skill with GitHub URL
+   4. Content copied to clipboard
+   5. Paste into Claude Desktop (Cmd+V)
+   6. Green checkmark ✓ shows it's cached
+   7. Click again anytime for instant re-copy
+
+CLI TOOL (Optional):
+   # Add to PATH:
+   sudo ln -s /Applications/McpSwitcher.app/Contents/Resources/bin/mcp-switcher /usr/local/bin/
+   
+   # Usage:
+   mcp-switcher list
+   mcp-switcher toggle <server-name>
+   mcp-switcher sync
+
+═══════════════════════════════════════════════════════════════════════════
+🔧 REQUIREMENTS
+═══════════════════════════════════════════════════════════════════════════
+
+• macOS 12.0 (Monterey) or later
+• ~10 MB disk space (plus cache)
+• ~50 MB RAM
+• Internet connection (for Skills search and GitHub)
+
+═══════════════════════════════════════════════════════════════════════════
+📄 INCLUDED DOCUMENTATION
+═══════════════════════════════════════════════════════════════════════════
+
+• README.md              - Project overview and features
+• INSTALL.md             - Installation guide (legacy)
+• INSTALLATION.md        - Detailed installation instructions
+• RELEASE_NOTES.md       - v1.0.0 release notes
+• ARCHITECTURE.md        - Technical architecture
+• DOMAIN_MODEL.md        - Domain model documentation
+• PERMANENT_PARSING.md   - Purple button feature guide
+• PURPLE_BUTTON_SUMMARY.md - Quick reference
+
+═══════════════════════════════════════════════════════════════════════════
+🔐 SECURITY & PRIVACY
+═══════════════════════════════════════════════════════════════════════════
+
+✅ All data stored locally on your Mac
+✅ No telemetry or analytics
+✅ API keys stored in macOS Keychain
+✅ Open source code available
+✅ MIT License - free to use and modify
+✅ No external servers (except SkillsMP API and GitHub)
+
+═══════════════════════════════════════════════════════════════════════════
+📞 SUPPORT
+═══════════════════════════════════════════════════════════════════════════
+
+GitHub:    https://github.com/bivex
+Email:     support@b-b.top
+License:   MIT License
+Copyright: © 2025 Bivex
+
+═══════════════════════════════════════════════════════════════════════════
+🎉 Thank you for choosing McpSwitcher! 🎉
+═══════════════════════════════════════════════════════════════════════════
